@@ -5,20 +5,15 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -55,7 +50,7 @@ fun RecipeMasterApp() {
             }
         }
     ) { innerPadding ->
-        NavHost(navController = navController, startDestination = "profile",modifier = Modifier.padding(innerPadding).background(Color.White)) {
+        NavHost(navController = navController, startDestination = "create",modifier = Modifier.padding(innerPadding).background(Color.White)) {
             composable("login") {
                 LoginPage(
                     onLoginClick = { navController.navigate("home") },
@@ -76,46 +71,6 @@ fun RecipeMasterApp() {
                 ProfilePage()
             }
         }
-    }
-}
-
-
-
-
-
-@Composable
-fun FavoritesPage() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-            .padding(16.dp)
-    ) {
-        Text(text = "Favorites Page", style = TextStyle(fontSize = 24.sp, color = Color.Black))
-    }
-}
-
-@Composable
-fun CreatePage() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-            .padding(16.dp)
-    ) {
-        Text(text = "Create Page", style = TextStyle(fontSize = 24.sp, color = Color.Black))
-    }
-}
-
-@Composable
-fun SearchPage() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-            .padding(16.dp)
-    ) {
-        Text(text = "Search Page", style = TextStyle(fontSize = 24.sp, color = Color.Black))
     }
 }
 
