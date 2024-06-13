@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -36,6 +37,23 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+
+data class SignUpRequest(
+    val name: String,
+    val email: String,
+    val password: String,
+    val password_confirmation: String
+)
+
+data class SignUpResponse(
+    val success: Boolean,
+    val message: String?
+)
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,11 +62,38 @@ fun SignUpPage(onSignUpClick: () -> Unit, onLoginClick: () -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    var loading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    fun signUp(
+        name: String,
+        email: String,
+        password: String,
+        confirmPassword: String,
+        onResponse: (Boolean, String?) -> Unit
+    ) {
+        val request = SignUpRequest(name, email, password, confirmPassword)
+        val call = ApiConnections.RetrofitClient.instance.signUp(request)
+
+        call.enqueue(object : Callback<SignUpResponse> {
+            override fun onResponse(call: Call<SignUpResponse>, response: Response<SignUpResponse>) {
+                if (response.isSuccessful && response.body() != null) {
+                    onResponse(true, null)
+                } else {
+                    onResponse(false, response.message())
+                }
+            }
+
+            override fun onFailure(call: Call<SignUpResponse>, t: Throwable) {
+                onResponse(false, t.message)
+            }
+        })
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-    ){
+    ) {
         Image(
             painter = painterResource(id = R.drawable.loginbg),
             contentDescription = null,
@@ -94,9 +139,9 @@ fun SignUpPage(onSignUpClick: () -> Unit, onLoginClick: () -> Unit) {
                     .border(width = 1.dp, color = Color.DarkGray, shape = RoundedCornerShape(8.dp)),
                 singleLine = true,
                 colors = TextFieldDefaults.textFieldColors(
-                    containerColor = Color.Transparent, // Use containerColor to set the internal background color
-                    focusedIndicatorColor = Color.Transparent, // Remove the underline when focused
-                    unfocusedIndicatorColor = Color.Transparent // Remove the underline when unfocused
+                    containerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
                 )
             )
 
@@ -115,9 +160,9 @@ fun SignUpPage(onSignUpClick: () -> Unit, onLoginClick: () -> Unit) {
                     keyboardType = KeyboardType.Email
                 ),
                 colors = TextFieldDefaults.textFieldColors(
-                    containerColor = Color.Transparent, // Use containerColor to set the internal background color
-                    focusedIndicatorColor = Color.Transparent, // Remove the underline when focused
-                    unfocusedIndicatorColor = Color.Transparent // Remove the underline when unfocused
+                    containerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
                 )
             )
 
@@ -137,9 +182,9 @@ fun SignUpPage(onSignUpClick: () -> Unit, onLoginClick: () -> Unit) {
                     keyboardType = KeyboardType.Password
                 ),
                 colors = TextFieldDefaults.textFieldColors(
-                    containerColor = Color.Transparent, // Use containerColor to set the internal background color
-                    focusedIndicatorColor = Color.Transparent, // Remove the underline when focused
-                    unfocusedIndicatorColor = Color.Transparent // Remove the underline when unfocused
+                    containerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
                 )
             )
 
@@ -159,9 +204,9 @@ fun SignUpPage(onSignUpClick: () -> Unit, onLoginClick: () -> Unit) {
                     keyboardType = KeyboardType.Password
                 ),
                 colors = TextFieldDefaults.textFieldColors(
-                    containerColor = Color.Transparent, // Use containerColor to set the internal background color
-                    focusedIndicatorColor = Color.Transparent, // Remove the underline when focused
-                    unfocusedIndicatorColor = Color.Transparent // Remove the underline when unfocused
+                    containerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
                 )
             )
 
@@ -169,14 +214,26 @@ fun SignUpPage(onSignUpClick: () -> Unit, onLoginClick: () -> Unit) {
 
             Button(
                 onClick = {
-                    onSignUpClick() // Navigate to login page after sign up
+                    loading = true
+                    signUp(name, email, password, confirmPassword) { success, error ->
+                        loading = false
+                        if (success) {
+                            onSignUpClick() // Navigate to login page after sign up
+                        } else {
+                            errorMessage = error
+                        }
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(60.dp),
                 colors = ButtonDefaults.buttonColors(Color(0xff129575))
             ) {
-                Text("Sign Up", color = Color.White)
+                if (loading) {
+                    CircularProgressIndicator(color = Color.White)
+                } else {
+                    Text("Sign Up", color = Color.White)
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -187,6 +244,15 @@ fun SignUpPage(onSignUpClick: () -> Unit, onLoginClick: () -> Unit) {
                 fontSize = 12.sp,
                 modifier = Modifier.clickable(onClick = onLoginClick)
             )
+
+            errorMessage?.let {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    it,
+                    color = Color.Red,
+                    fontSize = 12.sp
+                )
+            }
         }
     }
 }

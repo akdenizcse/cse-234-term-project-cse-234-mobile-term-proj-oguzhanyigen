@@ -50,7 +50,7 @@ fun RecipeMasterApp() {
             }
         }
     ) { innerPadding ->
-        NavHost(navController = navController, startDestination = "create",modifier = Modifier.padding(innerPadding).background(Color.White)) {
+        NavHost(navController = navController, startDestination = "login",modifier = Modifier.padding(innerPadding).background(Color.White)) {
             composable("login") {
                 LoginPage(
                     onLoginClick = { navController.navigate("home") },

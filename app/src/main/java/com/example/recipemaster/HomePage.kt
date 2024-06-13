@@ -1,5 +1,6 @@
 package com.example.recipemaster
 
+import HomeViewModel
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -33,6 +34,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,15 +50,34 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import retrofit2.Call
+import retrofit2.http.GET
 
+// Define data class for Recipe
+data class HomeRecipe(val id: Int, val name: String, val time: String, val rating: Float)
+
+// Define API service for Retrofit
+interface ApiService {
+    @GET("recipes")
+    fun getRecipes(): Call<List<HomeRecipe>>
+}
+
+
+
+
+// Composable for HomePage
 @Composable
-fun HomePage() {
+fun HomePage(homeViewModel: HomeViewModel = viewModel()) {
+    val myrecipes by homeViewModel.recipes.collectAsState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF8F8F8))
             .padding(16.dp)
     ) {
+        // Top greeting row
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -86,7 +107,7 @@ fun HomePage() {
                     .clickable { /* Handle profile click */ }
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.chef2), // Replace with your image resource
+                    painter = painterResource(id = R.drawable.chef2),
                     contentDescription = null,
                     modifier = Modifier
                         .size(60.dp)
@@ -98,6 +119,7 @@ fun HomePage() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Filter buttons row
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxWidth()
@@ -120,29 +142,29 @@ fun HomePage() {
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Recommended Recipes",
+            text = "All Recipes",
             style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Black)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Display recipes dynamically from backend
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 10.dp)
         ) {
-            itemsIndexed(homerecipes.chunked(2)) { index, pair ->
+            itemsIndexed(myrecipes.chunked(2)) { index, pair ->
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    pair.forEach { homerecipe ->
+                    pair.forEach { recipe ->
                         HomeRecipeCard(
-                            recipe = homerecipe,
+                            recipe = recipe,
                             onCardClick = {
-                                // Navigate to the specific recipe
-                                Log.d("RecipeCard", "Clicked on ${homerecipe.name}")
+                                Log.d("RecipeCard", "Clicked on ${recipe.name}")
                             },
                             onFavoriteClick = { id, isFavorite ->
                                 if (isFavorite) {
@@ -160,53 +182,7 @@ fun HomePage() {
     }
 }
 
-val favoriteRecipes = mutableListOf<Int>()
-
-val homerecipes = listOf(
-    HomeRecipe(
-        id = 1,
-        name = "Chicken",
-        time = "20 min",
-        rating = 4f
-    ),
-    HomeRecipe(
-        id = 2,
-        name = "Chicken",
-        time = "20 min",
-        rating = 4f
-    ),
-    HomeRecipe(
-        id = 3,
-        name = "Chicken",
-        time = "20 min",
-        rating = 4f
-    ),
-    HomeRecipe(
-        id = 4,
-        name = "Chicken",
-        time = "20 min",
-        rating = 4f
-    ),
-    HomeRecipe(
-        id = 5,
-        name = "Chicken",
-        time = "20 min",
-        rating = 4f
-    ),
-    HomeRecipe(
-        id = 6,
-        name = "Chicken",
-        time = "20 min",
-        rating = 4f
-    ),
-    HomeRecipe(
-        id = 7,
-        name = "Chicken",
-        time = "20 min",
-        rating = 4f
-    ),
-)
-
+// Composable for filter buttons
 @Composable
 fun FilterButton(text: String) {
     Button(
@@ -220,7 +196,8 @@ fun FilterButton(text: String) {
         Text(text = text, color = Color.Black)
     }
 }
-data class HomeRecipe(val id: Int, val name: String, val time: String, val rating: Float)
+
+// Composable for recipe card
 @Composable
 fun HomeRecipeCard(
     recipe: HomeRecipe,
@@ -249,7 +226,7 @@ fun HomeRecipeCard(
                     .height(80.dp)
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.food1), // Replace with your image resource
+                    painter = painterResource(id = R.drawable.food1),
                     contentDescription = null,
                     modifier = Modifier
                         .size(80.dp)
@@ -265,10 +242,10 @@ fun HomeRecipeCard(
                     },
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .offset(x = (16).dp, y = (-8).dp) // Adjust offset to move it more to the top right
+                        .offset(x = (16).dp, y = (-8).dp)
                 ) {
                     Icon(
-                        imageVector = if (isFavorite) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder, // Toggle icon
+                        imageVector = if (isFavorite) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder,
                         contentDescription = null,
                         tint = Color.Red,
                         modifier = Modifier.size(24.dp)
@@ -302,7 +279,7 @@ fun HomeRecipeCard(
                     textAlign = TextAlign.Center
                 )
                 Icon(
-                    imageVector = Icons.Filled.Star, // Replace with your star icon resource
+                    imageVector = Icons.Filled.Star,
                     contentDescription = null,
                     tint = Color.Yellow,
                     modifier = Modifier.size(12.dp)
@@ -311,3 +288,6 @@ fun HomeRecipeCard(
         }
     }
 }
+
+// List to hold favorite recipes
+val favoriteRecipes = mutableListOf<Int>()
