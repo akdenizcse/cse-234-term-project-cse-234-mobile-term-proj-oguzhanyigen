@@ -61,12 +61,6 @@ class ApiConnections {
         @GET("recipes/{id}")
         fun getRecipeById(@Path("id") id: Int): Call<HomeRecipe>
 
-       /* @POST("recipes")
-        fun createRecipe(
-            @Header("Authorization") authToken: String,
-            @Body request: CreateRecipeRequest
-        ): Call<CreateRecipeResponse>*/
-
         @Multipart
         @POST("recipes")
         fun createRecipe(

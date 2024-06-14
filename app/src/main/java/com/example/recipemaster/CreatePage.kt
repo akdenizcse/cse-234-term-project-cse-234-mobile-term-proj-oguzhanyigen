@@ -39,6 +39,7 @@ import retrofit2.Callback
 import retrofit2.Response
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,10 +68,10 @@ fun CreatePage(onRecipeCreated: (Boolean, String?) -> Unit) {
         imageUri: Uri?,
         onResponse: (Boolean, String?) -> Unit
     ) {
-        val titlePart = RequestBody.create(MultipartBody.FORM, title)
-        val instructionsPart = RequestBody.create(MultipartBody.FORM, instructions)
-        val ingredientsPart = RequestBody.create(MultipartBody.FORM, ingredients)
-        val userIdPart = RequestBody.create(MultipartBody.FORM, userId.toString())
+        val titlePart = title.toRequestBody(MultipartBody.FORM)
+        val instructionsPart = instructions.toRequestBody(MultipartBody.FORM)
+        val ingredientsPart = ingredients.toRequestBody(MultipartBody.FORM)
+        val userIdPart = userId.toString().toRequestBody(MultipartBody.FORM)
 
         val imagePart = imageUri?.let {
             val inputStream = context.contentResolver.openInputStream(it)
@@ -89,20 +90,32 @@ fun CreatePage(onRecipeCreated: (Boolean, String?) -> Unit) {
                         call: Call<CreateRecipeResponse>,
                         response: Response<CreateRecipeResponse>
                     ) {
-                        if (response.isSuccessful && response.body() != null) {
-                            val createResponse = response.body()!!
-                            onResponse(createResponse.success, createResponse.message)
+                        if (response.isSuccessful) {
+                            CoroutineScope(Dispatchers.Main).launch {
+                                val createResponse = response.body()
+                                if (createResponse != null) {
+                                    onResponse(createResponse.success, createResponse.message)
+                                } else {
+                                    onResponse(false, response.message())
+                                }
+                            }
                         } else {
-                            onResponse(false, response.message())
+                            CoroutineScope(Dispatchers.Main).launch {
+                                onResponse(false, response.message())
+                            }
                         }
                     }
 
                     override fun onFailure(call: Call<CreateRecipeResponse>, t: Throwable) {
-                        onResponse(false, t.message)
+                        CoroutineScope(Dispatchers.Main).launch {
+                            onResponse(false, t.message)
+                        }
                     }
                 })
             } else {
-                onResponse(false, "Authentication token not found")
+                CoroutineScope(Dispatchers.Main).launch {
+                    onResponse(false, "Authentication token not found")
+                }
             }
         }
     }

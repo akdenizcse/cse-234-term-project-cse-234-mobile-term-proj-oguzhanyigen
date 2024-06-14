@@ -34,7 +34,10 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import retrofit2.Call
 import retrofit2.Callback
@@ -287,24 +290,32 @@ fun HomeRecipeCard(
 
 
 fun fetchRecipes(context: Context, onResult: (List<HomeRecipe>?, String?) -> Unit) {
-    val apiService = ApiConnections.RetrofitClient.getInstance(context)
-    val call = apiService.getRecipes()
-    call.enqueue(object : Callback<List<HomeRecipe>> {
-        override fun onResponse(
-            call: Call<List<HomeRecipe>>,
-            response: Response<List<HomeRecipe>>
-        ) {
-            if (response.isSuccessful) {
-                onResult(response.body(), null)
-            } else {
-                onResult(null, response.message())
+    CoroutineScope(Dispatchers.IO).launch {
+        val apiService = ApiConnections.RetrofitClient.getInstance(context)
+        val call = apiService.getRecipes()
+        call.enqueue(object : Callback<List<HomeRecipe>> {
+            override fun onResponse(
+                call: Call<List<HomeRecipe>>,
+                response: Response<List<HomeRecipe>>
+            ) {
+                if (response.isSuccessful) {
+                    CoroutineScope(Dispatchers.Main).launch {
+                        onResult(response.body(), null)
+                    }
+                } else {
+                    CoroutineScope(Dispatchers.Main).launch {
+                        onResult(null, response.message())
+                    }
+                }
             }
-        }
 
-        override fun onFailure(call: Call<List<HomeRecipe>>, t: Throwable) {
-            onResult(null, t.message)
-        }
-    })
+            override fun onFailure(call: Call<List<HomeRecipe>>, t: Throwable) {
+                CoroutineScope(Dispatchers.Main).launch {
+                    onResult(null, t.message)
+                }
+            }
+        })
+    }
 }
 
 fun fetchUser(context: Context, userId: Int, onResult: (User?, String?) -> Unit) {
