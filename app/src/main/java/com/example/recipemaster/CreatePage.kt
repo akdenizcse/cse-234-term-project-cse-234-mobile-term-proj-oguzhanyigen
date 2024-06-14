@@ -22,7 +22,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import retrofit2.Call
 import retrofit2.Callback
@@ -37,17 +39,20 @@ fun CreatePage(onRecipeCreated: (Boolean, String?) -> Unit) {
     var loading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
+    val userId = runBlocking { UserPreferences.getUserId(context).first() } ?: 0
 
     fun createRecipe(
         title: String,
         instructions: String,
         ingredients: String,
+        userId: Int,
         onResponse: (Boolean, String?) -> Unit
     ) {
         val request = CreateRecipeRequest(
             title = title,
             instructions = instructions,
-            ingredients = ingredients
+            ingredients = ingredients,
+            userId = userId
         )
         CoroutineScope(Dispatchers.IO).launch {
             val authToken = UserPreferences.getUserTokenSync(context)
@@ -61,26 +66,18 @@ fun CreatePage(onRecipeCreated: (Boolean, String?) -> Unit) {
                     ) {
                         if (response.isSuccessful && response.body() != null) {
                             val createResponse = response.body()!!
-                            CoroutineScope(Dispatchers.Main).launch {
-                                onResponse(createResponse.success, createResponse.message)
-                            }
+                            onResponse(createResponse.success, createResponse.message)
                         } else {
-                            CoroutineScope(Dispatchers.Main).launch {
-                                onResponse(false, response.message())
-                            }
+                            onResponse(false, response.message())
                         }
                     }
 
                     override fun onFailure(call: Call<CreateRecipeResponse>, t: Throwable) {
-                        CoroutineScope(Dispatchers.Main).launch {
-                            onResponse(false, t.message)
-                        }
+                        onResponse(false, t.message)
                     }
                 })
             } else {
-                withContext(Dispatchers.Main) {
-                    onResponse(false, "Authentication token not found")
-                }
+                onResponse(false, "Authentication token not found")
             }
         }
     }
@@ -107,9 +104,7 @@ fun CreatePage(onRecipeCreated: (Boolean, String?) -> Unit) {
                 containerColor = Color.Transparent,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black
-
+                focusedTextColor = Color.Black
             )
         )
 
@@ -131,13 +126,11 @@ fun CreatePage(onRecipeCreated: (Boolean, String?) -> Unit) {
                 containerColor = Color.Transparent,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black
+                focusedTextColor = Color.Black
             )
         )
 
         Spacer(modifier = Modifier.height(16.dp))
-
 
         TextField(
             value = instructions,
@@ -155,9 +148,7 @@ fun CreatePage(onRecipeCreated: (Boolean, String?) -> Unit) {
                 containerColor = Color.Transparent,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black
-
+                focusedTextColor = Color.Black
             )
         )
 
@@ -166,7 +157,7 @@ fun CreatePage(onRecipeCreated: (Boolean, String?) -> Unit) {
         Button(
             onClick = {
                 loading = true
-                createRecipe(title, instructions, ingredients) { success, message ->
+                createRecipe(title, instructions, ingredients, userId) { success, message ->
                     loading = false
                     if (success) {
                         onRecipeCreated(true, "Recipe created successfully")

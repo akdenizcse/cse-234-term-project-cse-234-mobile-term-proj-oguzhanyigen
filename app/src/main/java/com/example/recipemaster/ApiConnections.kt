@@ -30,7 +30,8 @@ data class HomeRecipe(
 data class CreateRecipeRequest(
     val title: String,
     val instructions: String,
-    val ingredients: String
+    val ingredients: String,
+    val userId: Int
 )
 
 data class CreateRecipeResponse(
