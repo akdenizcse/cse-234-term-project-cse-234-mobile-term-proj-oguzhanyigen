@@ -65,7 +65,18 @@ fun RecipeMasterApp() {
             }
             composable("home") { HomePage() }
             composable("favorites") { FavoritesPage() }
-            composable("create") { CreatePage() }
+            composable("create") {
+                CreatePage(
+                    onRecipeCreated = { success, message ->
+                        if (success) {
+                            // Handle successful recipe creation, e.g., navigate to another page or show a success message
+                            navController.navigate("home")
+                        } else {
+                            // Handle error, e.g., show an error message
+                        }
+                    }
+                )
+            }
             composable("search") { SearchPage() }
             composable("profile") {
                 ProfilePage()
@@ -73,4 +84,3 @@ fun RecipeMasterApp() {
         }
     }
 }
-

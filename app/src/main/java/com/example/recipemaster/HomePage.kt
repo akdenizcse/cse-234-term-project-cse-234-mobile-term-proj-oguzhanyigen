@@ -1,6 +1,5 @@
 package com.example.recipemaster
 
-import HomeViewModel
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -54,22 +53,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import retrofit2.Call
 import retrofit2.http.GET
 
-// Define data class for Recipe
-data class HomeRecipe(val id: Int, val name: String, val time: String, val rating: Float)
-
-// Define API service for Retrofit
-interface ApiService {
-    @GET("recipes")
-    fun getRecipes(): Call<List<HomeRecipe>>
-}
-
 
 
 
 // Composable for HomePage
 @Composable
-fun HomePage(homeViewModel: HomeViewModel = viewModel()) {
-    val myrecipes by homeViewModel.recipes.collectAsState()
+fun HomePage(/*homeViewModel: HomeViewModel = viewModel()*/) {
+    //val myrecipes by homeViewModel.recipes.collectAsState()
 
     Column(
         modifier = Modifier
@@ -155,29 +145,29 @@ fun HomePage(homeViewModel: HomeViewModel = viewModel()) {
                 .fillMaxWidth()
                 .padding(start = 10.dp)
         ) {
-            itemsIndexed(myrecipes.chunked(2)) { index, pair ->
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    pair.forEach { recipe ->
-                        HomeRecipeCard(
-                            recipe = recipe,
-                            onCardClick = {
-                                Log.d("RecipeCard", "Clicked on ${recipe.name}")
-                            },
-                            onFavoriteClick = { id, isFavorite ->
-                                if (isFavorite) {
-                                    favoriteRecipes.add(id)
-                                } else {
-                                    favoriteRecipes.remove(id)
-                                }
-                                Log.d("FavoriteIcon", "Favorite clicked on recipe ID $id, isFavorite: $isFavorite, favoriteRecipes: $favoriteRecipes")
-                            }
-                        )
-                    }
-                }
-            }
+//            itemsIndexed(myrecipes.chunked(2)) { index, pair ->
+//                Row(
+//                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+//                    modifier = Modifier.fillMaxWidth()
+//                ) {
+//                    pair.forEach { recipe ->
+//                        HomeRecipeCard(
+//                            recipe = recipe,
+//                            onCardClick = {
+//                                Log.d("RecipeCard", "Clicked on ${recipe.name}")
+//                            },
+//                            onFavoriteClick = { id, isFavorite ->
+//                                if (isFavorite) {
+//                                    favoriteRecipes.add(id)
+//                                } else {
+//                                    favoriteRecipes.remove(id)
+//                                }
+//                                Log.d("FavoriteIcon", "Favorite clicked on recipe ID $id, isFavorite: $isFavorite, favoriteRecipes: $favoriteRecipes")
+//                            }
+//                        )
+//                    }
+//                }
+//            }
         }
     }
 }

@@ -18,9 +18,31 @@ class RecipeController extends Controller
         return Recipe::findOrFail($id);
     }
 
+    /*  public function store(Request $request)
+     {
+         $recipe = Recipe::create($request->all());
+         return response()->json($recipe, 201);
+     } */
+
     public function store(Request $request)
     {
-        $recipe = Recipe::create($request->all());
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'image' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'ingredients' => 'required|string',
+            'instructions' => 'required|string',
+        ]);
+
+       /*  // Handle image upload
+        $imageName = time() . '.' . $request->image->extension();
+        $request->image->move(public_path('images'), $imageName);
+ */
+        // Merge image path into request data
+        $data = $request->all();
+       /*  $data['image'] = $imageName; */
+
+        $recipe = Recipe::create($data);
+
         return response()->json($recipe, 201);
     }
 

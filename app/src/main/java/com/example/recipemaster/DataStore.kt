@@ -1,3 +1,4 @@
+// DataStore.kt
 package com.example.recipemaster
 
 import android.content.Context
@@ -6,7 +7,9 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.runBlocking
 
 private val Context.dataStore by preferencesDataStore(name = "user_prefs")
 
@@ -36,5 +39,11 @@ object UserPreferences {
         return context.dataStore.data.map { preferences ->
             preferences[USER_TOKEN_KEY]
         }
+    }
+
+    suspend fun getUserTokenSync(context: Context): String? {
+        return context.dataStore.data.map { preferences ->
+            preferences[USER_TOKEN_KEY]
+        }.first()
     }
 }

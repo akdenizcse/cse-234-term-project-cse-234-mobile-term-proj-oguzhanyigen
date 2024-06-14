@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -40,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+
 
 data class SignUpRequest(
     val name: String,
@@ -64,7 +66,7 @@ fun SignUpPage(onSignUpClick: () -> Unit, onLoginClick: () -> Unit) {
     var confirmPassword by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-
+    val context = LocalContext.current
     fun signUp(
         name: String,
         email: String,
@@ -73,7 +75,7 @@ fun SignUpPage(onSignUpClick: () -> Unit, onLoginClick: () -> Unit) {
         onResponse: (Boolean, String?) -> Unit
     ) {
         val request = SignUpRequest(name, email, password, confirmPassword)
-        val call = ApiConnections.RetrofitClient.instance.signUp(request)
+        val call = ApiConnections.RetrofitClient.getInstance(context).signUp(request)
 
         call.enqueue(object : Callback<SignUpResponse> {
             override fun onResponse(call: Call<SignUpResponse>, response: Response<SignUpResponse>) {
@@ -141,7 +143,9 @@ fun SignUpPage(onSignUpClick: () -> Unit, onLoginClick: () -> Unit) {
                 colors = TextFieldDefaults.textFieldColors(
                     containerColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedTextColor = Color.Black
+
                 )
             )
 
@@ -162,7 +166,9 @@ fun SignUpPage(onSignUpClick: () -> Unit, onLoginClick: () -> Unit) {
                 colors = TextFieldDefaults.textFieldColors(
                     containerColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedTextColor = Color.Black
+
                 )
             )
 
@@ -184,7 +190,9 @@ fun SignUpPage(onSignUpClick: () -> Unit, onLoginClick: () -> Unit) {
                 colors = TextFieldDefaults.textFieldColors(
                     containerColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedTextColor = Color.Black
+
                 )
             )
 
@@ -206,7 +214,9 @@ fun SignUpPage(onSignUpClick: () -> Unit, onLoginClick: () -> Unit) {
                 colors = TextFieldDefaults.textFieldColors(
                     containerColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedTextColor = Color.Black
+
                 )
             )
 

@@ -68,7 +68,8 @@ fun LoginPage(onLoginClick: (String?) -> Unit, onSignUpClick: () -> Unit) {
 
     fun login(email: String, password: String, onResponse: (Boolean, String?, Int?) -> Unit) {
         val request = LoginRequest(email, password)
-        val call = ApiConnections.RetrofitClient.instance.login(request)
+        val apiService = ApiConnections.RetrofitClient.getInstance(context) // Get ApiService instance with context
+        val call = apiService.login(request)
 
         call.enqueue(object : Callback<LoginResponse> {
             override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
@@ -141,7 +142,9 @@ fun LoginPage(onLoginClick: (String?) -> Unit, onSignUpClick: () -> Unit) {
                 colors = TextFieldDefaults.textFieldColors(
                     containerColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedTextColor = Color.Black
+
                 )
             )
 
@@ -163,7 +166,9 @@ fun LoginPage(onLoginClick: (String?) -> Unit, onSignUpClick: () -> Unit) {
                 colors = TextFieldDefaults.textFieldColors(
                     containerColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedTextColor = Color.Black
+
                 )
             )
 
