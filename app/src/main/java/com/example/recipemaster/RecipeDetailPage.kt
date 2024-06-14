@@ -1,22 +1,12 @@
 package com.example.recipemaster
 
 import android.content.Context
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.Favorite
-import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material3.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,19 +14,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import coil.annotation.ExperimentalCoilApi
+import coil.compose.rememberImagePainter
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 
+@OptIn(ExperimentalCoilApi::class)
 @Composable
 fun RecipeDetailPage(recipeId: Int) {
     var recipe by remember { mutableStateOf<HomeRecipe?>(null) }
@@ -59,7 +49,8 @@ fun RecipeDetailPage(recipeId: Int) {
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF8F8F8))
-            .padding(16.dp)
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (loading) {
             CircularProgressIndicator()
@@ -70,24 +61,55 @@ fun RecipeDetailPage(recipeId: Int) {
             )
         } else {
             recipe?.let {
+                val imageUrl = "http://192.168.0.157:8000/images/${it.image}"
+
+                Image(
+                    painter = rememberImagePainter(data = imageUrl),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .clip(RoundedCornerShape(15.dp)),
+                    contentScale = ContentScale.Crop
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 Text(
                     text = it.title,
-                    style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                    style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black),
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
-
-                Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Ingredients: ${it.ingredients}",
-                    style = TextStyle(fontSize = 18.sp, color = Color.Gray)
+                    text = "Ingredients:",
+                    style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
                 )
-
-                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = it.ingredients,
+                    style = TextStyle(fontSize = 18.sp, color = Color.Gray),
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
 
                 Text(
-                    text = "Instructions: ${it.instructions}",
-                    style = TextStyle(fontSize = 18.sp, color = Color.Gray)
+                    text = "Instructions:",
+                    style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
                 )
+
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    item {
+                        Text(
+                            text = it.instructions,
+                            style = TextStyle(fontSize = 17.sp, color = Color.Gray),
+                            //maxLines = 10, // you can adjust the max lines as needed
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                    }
+                }
             }
         }
     }

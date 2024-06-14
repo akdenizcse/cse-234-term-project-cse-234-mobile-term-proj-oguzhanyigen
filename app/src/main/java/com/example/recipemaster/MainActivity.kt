@@ -79,7 +79,7 @@ fun RecipeMasterApp() {
             }
             composable("search") { SearchPage() }
             composable("profile") {
-                ProfilePage()
+                ProfilePage(navController)
             }
             composable("recipeDetail/{recipeId}") { backStackEntry ->
                 val recipeId = backStackEntry.arguments?.getString("recipeId")?.toInt() ?: 0

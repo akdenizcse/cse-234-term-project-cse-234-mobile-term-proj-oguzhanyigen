@@ -4,16 +4,7 @@ import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -23,29 +14,24 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.annotation.ExperimentalCoilApi
+import coil.compose.rememberImagePainter
+import kotlinx.coroutines.runBlocking
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import kotlinx.coroutines.runBlocking
-
 
 @Composable
 fun FavoritesPage(navController: NavController) {
@@ -110,7 +96,7 @@ fun FavoritesPage(navController: NavController) {
                             title = recipe.title,
                             ingredients = recipe.ingredients, // Replace with actual author if available
                             instructions = recipe.instructions, // Replace with actual cooking time if available
-                            imageResId = R.drawable.food1, // Replace with actual image resource if available
+                            image = recipe.image,
                             onCardClick = {
                                 navController.navigate("recipeDetail/${recipe.id}")
                             }
@@ -122,8 +108,17 @@ fun FavoritesPage(navController: NavController) {
     }
 }
 
+@OptIn(ExperimentalCoilApi::class)
 @Composable
-fun FavoritesRecipeCard(title: String, ingredients: String, instructions: String, imageResId: Int,onCardClick: () -> Unit) {
+fun FavoritesRecipeCard(
+    title: String,
+    ingredients: String,
+    instructions: String,
+    image: String?,
+    onCardClick: () -> Unit
+) {
+    val imageUrl = "http://192.168.0.157:8000/images/$image" // Adjust the base URL as necessary
+
     Card(
         shape = MaterialTheme.shapes.medium,
         modifier = Modifier
@@ -133,13 +128,13 @@ fun FavoritesRecipeCard(title: String, ingredients: String, instructions: String
     ) {
         Box {
             Image(
-                painter = painterResource(id = imageResId),
+                painter = rememberImagePainter(data = imageUrl),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .height(175.dp)
                     .fillMaxWidth()
-                    .alpha(0.55f) // Adjust the alpha value for desired transparency
+                    .alpha(0.8f) // Adjust the alpha value for desired transparency
             )
             Column(
                 modifier = Modifier
@@ -148,7 +143,10 @@ fun FavoritesRecipeCard(title: String, ingredients: String, instructions: String
                 verticalArrangement = Arrangement.Bottom
             ) {
                 Spacer(modifier = Modifier.height(85.dp))
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     Text(
                         text = title,
                         fontSize = 16.sp,
@@ -156,29 +154,29 @@ fun FavoritesRecipeCard(title: String, ingredients: String, instructions: String
                         color = Color.White
                     )
                     Text(
-                        text = "",
+                        text = ingredients,
                         fontSize = 14.sp,
                         color = Color.White
                     )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = "",
-                            fontSize = 14.sp,
-                            color = Color.White
-                        )
-                        Spacer(modifier = Modifier.weight(1f))
-                        Icon(
-                            imageVector = Icons.Outlined.Favorite,
-                            tint = Color.Red,
-                            contentDescription = null
-                        )
-                    }
+                    Text(
+                        text = instructions,
+                        fontSize = 14.sp,
+                        color = Color.White,
+                        maxLines = 2,
+                    )
                 }
             }
+            Icon(
+                imageVector = Icons.Outlined.Favorite,
+                tint = Color.Red,
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+            )
         }
     }
+
 }
 
 fun fetchRecipesFavPage(context: Context, onResult: (List<HomeRecipe>?, String?) -> Unit) {

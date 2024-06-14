@@ -25,15 +25,17 @@ class RecipeController extends Controller
             'image' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'ingredients' => 'required|string',
             'instructions' => 'required|string',
+            'userId' => 'required|integer',
         ]);
 
-       /*  // Handle image upload
-        $imageName = time() . '.' . $request->image->extension();
-        $request->image->move(public_path('images'), $imageName);
- */
-        // Merge image path into request data
+
         $data = $request->all();
-       /*  $data['image'] = $imageName; */
+
+        if ($request->hasFile('image')) {
+            $imageName = time() . '.' . $request->image->extension();
+            $request->image->move(public_path('images'), $imageName);
+            $data['image'] = $imageName;
+        }
 
         $recipe = Recipe::create($data);
 
@@ -52,5 +54,10 @@ class RecipeController extends Controller
         Recipe::destroy($id);
         return response()->json(null, 204);
     }
+
+    public function getUserRecipes($userId)
+{
+    return Recipe::where('userid', $userId)->get();
+}
 }
 

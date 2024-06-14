@@ -32,6 +32,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.annotation.ExperimentalCoilApi
+import coil.compose.rememberImagePainter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import retrofit2.Call
@@ -182,6 +184,7 @@ fun HomePage(navController: NavController) {
 }
 
 
+@OptIn(ExperimentalCoilApi::class)
 @Composable
 fun HomeRecipeCard(
     recipe: HomeRecipe,
@@ -210,8 +213,9 @@ fun HomeRecipeCard(
                     .fillMaxWidth()
                     .height(160.dp)
             ) {
+                val imageUrl = "http://192.168.0.157:8000/images/${recipe.image}" // Adjust the base URL as necessary
                 Image(
-                    painter = painterResource(id = R.drawable.food1), // Replace with your actual image source
+                    painter = rememberImagePainter(data = imageUrl),
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()
@@ -253,8 +257,9 @@ fun HomeRecipeCard(
 
             Text(
                 text = "Ingredients: ${recipe.ingredients}",
-                style = TextStyle(fontSize = 14.sp, color = Color.Gray),
-                textAlign = TextAlign.Center
+                style = TextStyle(fontSize = 14.sp, color = Color.Gray,),
+                textAlign = TextAlign.Center,
+
             )
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -264,21 +269,21 @@ fun HomeRecipeCard(
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = recipe.instructions, //recipe.rating.toString()
+                    text = recipe.instructions,
                     style = TextStyle(fontSize = 14.sp, color = Color.Gray),
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    maxLines = 3,
                 )
                 Icon(
                     imageVector = Icons.Filled.Star,
                     contentDescription = null,
                     tint = Color.Yellow,
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(0.dp)
                 )
             }
         }
     }
 }
-
 
 
 fun fetchRecipes(context: Context, onResult: (List<HomeRecipe>?, String?) -> Unit) {

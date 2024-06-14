@@ -7,6 +7,8 @@ import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.Call
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -17,6 +19,8 @@ import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
+import retrofit2.http.Multipart
+import retrofit2.http.Part
 
 
 // Define data class for Recipe
@@ -24,7 +28,8 @@ data class HomeRecipe(
     val id: Int,
     val title: String,
     val ingredients: String,
-    val instructions: String
+    val instructions: String,
+    val image: String,
 )
 
 data class CreateRecipeRequest(
@@ -39,7 +44,7 @@ data class CreateRecipeResponse(
     val message: String?
 )
 // User data class
-data class User(val id: Int, val name: String, val email: String)
+data class User(val id: Int, val name: String, val email: String,val job:String,val profiletext:String)
 
 class ApiConnections {
 
@@ -56,10 +61,21 @@ class ApiConnections {
         @GET("recipes/{id}")
         fun getRecipeById(@Path("id") id: Int): Call<HomeRecipe>
 
-        @POST("recipes")
+       /* @POST("recipes")
         fun createRecipe(
             @Header("Authorization") authToken: String,
             @Body request: CreateRecipeRequest
+        ): Call<CreateRecipeResponse>*/
+
+        @Multipart
+        @POST("recipes")
+        fun createRecipe(
+            @Header("Authorization") authToken: String,
+            @Part("title") title: RequestBody,
+            @Part("instructions") instructions: RequestBody,
+            @Part("ingredients") ingredients: RequestBody,
+            @Part("userId") userId: RequestBody,
+            @Part image: MultipartBody.Part?
         ): Call<CreateRecipeResponse>
 
         @POST("favorites")
@@ -79,6 +95,12 @@ class ApiConnections {
 
         @GET("user/{userId}")
         fun getUser(@Header("Authorization") authToken: String, @retrofit2.http.Path("userId") userId: Int): Call<User>
+
+        @GET("user/{userId}/recipes")
+        fun getUserRecipes(
+            @Header("Authorization") authToken: String,
+            @Path("userId") userId: Int
+        ): Call<List<HomeRecipe>>
     }
 
     class AuthInterceptor(private val context: Context) : Interceptor {

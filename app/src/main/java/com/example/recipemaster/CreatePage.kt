@@ -2,6 +2,10 @@
 package com.example.recipemaster
 
 import android.content.Context
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,15 +24,21 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.rememberImagePainter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType
+import okhttp3.MediaType.Companion.parse
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,29 +46,44 @@ fun CreatePage(onRecipeCreated: (Boolean, String?) -> Unit) {
     var title by remember { mutableStateOf("") }
     var ingredients by remember { mutableStateOf("") }
     var instructions by remember { mutableStateOf("") }
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
     var loading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val userId = runBlocking { UserPreferences.getUserId(context).first() } ?: 0
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri: Uri? ->
+            imageUri = uri
+        }
+    )
 
     fun createRecipe(
         title: String,
         instructions: String,
         ingredients: String,
         userId: Int,
+        imageUri: Uri?,
         onResponse: (Boolean, String?) -> Unit
     ) {
-        val request = CreateRecipeRequest(
-            title = title,
-            instructions = instructions,
-            ingredients = ingredients,
-            userId = userId
-        )
+        val titlePart = RequestBody.create(MultipartBody.FORM, title)
+        val instructionsPart = RequestBody.create(MultipartBody.FORM, instructions)
+        val ingredientsPart = RequestBody.create(MultipartBody.FORM, ingredients)
+        val userIdPart = RequestBody.create(MultipartBody.FORM, userId.toString())
+
+        val imagePart = imageUri?.let {
+            val inputStream = context.contentResolver.openInputStream(it)
+            val byteArray = inputStream?.readBytes()
+            val requestBody = RequestBody.create("image/*".toMediaTypeOrNull(), byteArray!!)
+            MultipartBody.Part.createFormData("image", "image.jpg", requestBody)
+        }
+
         CoroutineScope(Dispatchers.IO).launch {
             val authToken = UserPreferences.getUserTokenSync(context)
             if (authToken != null) {
                 val apiService = ApiConnections.RetrofitClient.getInstance(context)
-                val call = apiService.createRecipe("Bearer $authToken", request)
+                val call = apiService.createRecipe("Bearer $authToken", titlePart, instructionsPart, ingredientsPart, userIdPart, imagePart)
                 call.enqueue(object : Callback<CreateRecipeResponse> {
                     override fun onResponse(
                         call: Call<CreateRecipeResponse>,
@@ -152,12 +177,30 @@ fun CreatePage(onRecipeCreated: (Boolean, String?) -> Unit) {
             )
         )
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = { launcher.launch("image/*") },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(text = "Select Image")
+        }
+
+        imageUri?.let {
+            Spacer(modifier = Modifier.height(16.dp))
+            Image(
+                painter = rememberImagePainter(data = it),
+                contentDescription = null,
+                modifier = Modifier.size(128.dp)
+            )
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
             onClick = {
                 loading = true
-                createRecipe(title, instructions, ingredients, userId) { success, message ->
+                createRecipe(title, instructions, ingredients, userId, imageUri) { success, message ->
                     loading = false
                     if (success) {
                         onRecipeCreated(true, "Recipe created successfully")
