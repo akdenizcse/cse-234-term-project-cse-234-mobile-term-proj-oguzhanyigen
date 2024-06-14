@@ -1,7 +1,9 @@
 package com.example.recipemaster
 
+import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,30 +19,69 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import kotlinx.coroutines.runBlocking
+
 
 @Composable
-fun FavoritesPage() {
+fun FavoritesPage(navController: NavController) {
+    var recipes by remember { mutableStateOf<List<HomeRecipe>?>(null) }
+    var favoriteRecipeIds by remember { mutableStateOf<List<Int>>(emptyList()) }
+    var loading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        fetchRecipesFavPage(context) { result, error ->
+            if (result != null) {
+                recipes = result
+            } else {
+                errorMessage = error
+            }
+        }
+
+        fetchFavoriteRecipesFavPage(context) { result, error ->
+            if (result != null) {
+                favoriteRecipeIds = result
+                loading = false
+            } else {
+                errorMessage = error
+            }
+        }
+    }
+
+    val favoriteRecipes = recipes?.filter { favoriteRecipeIds.contains(it.id) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-
         Spacer(modifier = Modifier.height(20.dp))
         Text(
             text = "Saved Recipes",
@@ -50,30 +91,45 @@ fun FavoritesPage() {
             fontWeight = FontWeight.SemiBold
         )
 
-        LazyColumn(
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.background(Color.White)
-        ) {
-            items(Favoriterecipes) { favoriteRecipes ->
-                FavoritesRecipeCard(
-                    title = favoriteRecipes.title,
-                    author = favoriteRecipes.author,
-                    time = favoriteRecipes.time,
-                    imageResId = favoriteRecipes.imageUrl // Update this line
-                )
+        if (loading) {
+            CircularProgressIndicator()
+        } else if (errorMessage != null) {
+            Text(
+                text = errorMessage ?: "Unknown error",
+                color = Color.Red
+            )
+        } else {
+            LazyColumn(
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.background(Color.White)
+            ) {
+                favoriteRecipes?.let {
+                    items(it) { recipe ->
+                        FavoritesRecipeCard(
+                            title = recipe.title,
+                            ingredients = recipe.ingredients, // Replace with actual author if available
+                            instructions = recipe.instructions, // Replace with actual cooking time if available
+                            imageResId = R.drawable.food1, // Replace with actual image resource if available
+                            onCardClick = {
+                                navController.navigate("recipeDetail/${recipe.id}")
+                            }
+                        )
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-fun FavoritesRecipeCard(title: String, author: String, time: String, imageResId: Int) {
+fun FavoritesRecipeCard(title: String, ingredients: String, instructions: String, imageResId: Int,onCardClick: () -> Unit) {
     Card(
         shape = MaterialTheme.shapes.medium,
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
+            .clickable { onCardClick() }
     ) {
         Box {
             Image(
@@ -100,7 +156,7 @@ fun FavoritesRecipeCard(title: String, author: String, time: String, imageResId:
                         color = Color.White
                     )
                     Text(
-                        text = "By $author",
+                        text = "",
                         fontSize = 14.sp,
                         color = Color.White
                     )
@@ -108,7 +164,7 @@ fun FavoritesRecipeCard(title: String, author: String, time: String, imageResId:
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = time,
+                            text = "",
                             fontSize = 14.sp,
                             color = Color.White
                         )
@@ -125,56 +181,39 @@ fun FavoritesRecipeCard(title: String, author: String, time: String, imageResId:
     }
 }
 
+fun fetchRecipesFavPage(context: Context, onResult: (List<HomeRecipe>?, String?) -> Unit) {
+    val apiService = ApiConnections.RetrofitClient.getInstance(context)
+    val call = apiService.getRecipes()
+    call.enqueue(object : Callback<List<HomeRecipe>> {
+        override fun onResponse(call: Call<List<HomeRecipe>>, response: Response<List<HomeRecipe>>) {
+            if (response.isSuccessful) {
+                onResult(response.body(), null)
+            } else {
+                onResult(null, response.message())
+            }
+        }
 
-val Favoriterecipes = listOf(
-    Recipe(
-        title = "Traditional spare ribs baked",
-        author = "Chef John",
-        time = "20 min",
-        imageUrl = R.drawable.food1
-    ),
-    Recipe(
-        title = "Spice roasted chicken with flavored rice",
-        author = "Mark Kelvin",
-        time = "20 min",
-        imageUrl = R.drawable.food1
-    ),
-    Recipe(
-        title = "Spice roasted chicken with flavored rice",
-        author = "Mark Kelvin",
-        time = "20 min",
-        imageUrl = R.drawable.food1
-    ),
-    Recipe(
-        title = "Spice roasted chicken with flavored rice",
-        author = "Mark Kelvin",
-        time = "20 min",
-        imageUrl = R.drawable.food1
-    ),
-    Recipe(
-        title = "Spice roasted chicken with flavored rice",
-        author = "Mark Kelvin",
-        time = "20 min",
-        imageUrl = R.drawable.food1
-    ),
-    Recipe(
-        title = "Spice roasted chicken with flavored rice",
-        author = "Mark Kelvin",
-        time = "20 min",
-        imageUrl = R.drawable.food1
-    ),
-    Recipe(
-        title = "Spice roasted chicken with flavored rice",
-        author = "Mark Kelvin",
-        time = "20 min",
-        imageUrl = R.drawable.food1
-    ),
-    // Add more recipes as needed
-)
+        override fun onFailure(call: Call<List<HomeRecipe>>, t: Throwable) {
+            onResult(null, t.message)
+        }
+    })
+}
 
-data class FavoriteRecipe(
-    val title: String,
-    val author: String,
-    val time: String,
-    val imageUrl: Int
-)
+fun fetchFavoriteRecipesFavPage(context: Context, onResult: (List<Int>?, String?) -> Unit) {
+    val apiService = ApiConnections.RetrofitClient.getInstance(context)
+    val authToken = runBlocking { UserPreferences.getUserTokenSync(context) }
+    val call = apiService.getFavorites("Bearer $authToken")
+    call.enqueue(object : Callback<List<Int>> {
+        override fun onResponse(call: Call<List<Int>>, response: Response<List<Int>>) {
+            if (response.isSuccessful) {
+                onResult(response.body(), null)
+            } else {
+                onResult(null, response.message())
+            }
+        }
+
+        override fun onFailure(call: Call<List<Int>>, t: Throwable) {
+            onResult(null, t.message)
+        }
+    })
+}

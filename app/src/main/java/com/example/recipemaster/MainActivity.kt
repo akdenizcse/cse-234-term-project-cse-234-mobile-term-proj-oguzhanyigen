@@ -64,7 +64,7 @@ fun RecipeMasterApp() {
                 )
             }
             composable("home") { HomePage(navController) }
-            composable("favorites") { FavoritesPage() }
+            composable("favorites") { FavoritesPage( navController) }
             composable("create") {
                 CreatePage(
                     onRecipeCreated = { success, message ->
