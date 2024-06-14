@@ -35,4 +35,10 @@ class FavoriteController extends Controller
 
         return response()->json(null, 204);
     }
+
+    public function getFavorites()
+    {
+        $favorites = Favorite::where('user_id', Auth::id())->pluck('recipe_id');
+        return response()->json($favorites, 200);
+    }
 }

@@ -31,6 +31,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import retrofit2.Call
@@ -39,16 +40,15 @@ import retrofit2.Response
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomePage() {
+fun HomePage(navController: NavController) {
     var recipes by remember { mutableStateOf<List<HomeRecipe>?>(null) }
+    var favoriteRecipeIds by remember { mutableStateOf<List<Int>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var searchQuery by remember { mutableStateOf("") }
-    val context = LocalContext.current
     var userName by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
     val userId = runBlocking { UserPreferences.getUserId(context).first() } ?: 0
-
-
 
     LaunchedEffect(Unit) {
         fetchRecipes(context) { result, error ->
@@ -67,11 +67,17 @@ fun HomePage() {
                 errorMessage = error
             }
         }
+
+        fetchFavoriteRecipes(context) { result, error ->
+            if (result != null) {
+                favoriteRecipeIds = result
+            } else {
+                errorMessage = error
+            }
+        }
     }
 
     val filteredRecipes = recipes?.filter { it.title.contains(searchQuery, ignoreCase = true) }
-
-
 
     Column(
         modifier = Modifier
@@ -136,9 +142,7 @@ fun HomePage() {
             colors = TextFieldDefaults.textFieldColors(
                 containerColor = Color.Transparent,
                 focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black
+                unfocusedIndicatorColor = Color.Transparent
             )
         )
 
@@ -162,8 +166,13 @@ fun HomePage() {
                     items(it) { recipe ->
                         HomeRecipeCard(
                             recipe = recipe,
-                            onCardClick = { /* Handle card click */ },
-                            onFavoriteClick = { id, isFavorite -> /* Handle favorite click */ }
+                            isFavorite = favoriteRecipeIds.contains(recipe.id),
+                            onCardClick = {
+                                navController.navigate("recipeDetail/${recipe.id}")
+                            },
+                            onFavoriteClick = { id, isFavorite ->
+                                handleFavoriteClick(context, id, isFavorite)
+                            }
                         )
                     }
                 }
@@ -172,13 +181,15 @@ fun HomePage() {
     }
 }
 
+
 @Composable
 fun HomeRecipeCard(
     recipe: HomeRecipe,
+    isFavorite: Boolean,
     onCardClick: () -> Unit,
     onFavoriteClick: (Int, Boolean) -> Unit
 ) {
-    var isFavorite by remember { mutableStateOf(false) }
+    var favoriteState by remember { mutableStateOf(isFavorite) }
 
     Card(
         modifier = Modifier
@@ -210,15 +221,15 @@ fun HomeRecipeCard(
 
                 IconButton(
                     onClick = {
-                        isFavorite = !isFavorite
-                        onFavoriteClick(recipe.id, isFavorite)
+                        favoriteState = !favoriteState
+                        onFavoriteClick(recipe.id, favoriteState)
                     },
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(8.dp)
                 ) {
                     Icon(
-                        imageVector = if (isFavorite) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder,
+                        imageVector = if (favoriteState) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder,
                         contentDescription = null,
                         tint = Color.Red,
                         modifier = Modifier.size(24.dp)
@@ -268,6 +279,8 @@ fun HomeRecipeCard(
     }
 }
 
+
+
 fun fetchRecipes(context: Context, onResult: (List<HomeRecipe>?, String?) -> Unit) {
     val apiService = ApiConnections.RetrofitClient.getInstance(context)
     val call = apiService.getRecipes()
@@ -303,6 +316,58 @@ fun fetchUser(context: Context, userId: Int, onResult: (User?, String?) -> Unit)
         }
 
         override fun onFailure(call: Call<User>, t: Throwable) {
+            onResult(null, t.message)
+        }
+    })
+}
+
+fun handleFavoriteClick(context: Context, recipeId: Int, isFavorite: Boolean) {
+    val apiService = ApiConnections.RetrofitClient.getInstance(context)
+    val authToken = runBlocking { UserPreferences.getUserTokenSync(context) }
+
+    if (isFavorite) {
+        val call = apiService.addFavorite("Bearer $authToken", recipeId)
+        call.enqueue(object : Callback<Void> {
+            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                if (!response.isSuccessful) {
+                    Log.e("Favorite", "Failed to add favorite: ${response.message()}")
+                }
+            }
+
+            override fun onFailure(call: Call<Void>, t: Throwable) {
+                Log.e("Favorite", "Failed to add favorite: ${t.message}")
+            }
+        })
+    } else {
+        val call = apiService.removeFavorite("Bearer $authToken", recipeId)
+        call.enqueue(object : Callback<Void> {
+            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                if (!response.isSuccessful) {
+                    Log.e("Favorite", "Failed to remove favorite: ${response.message()}")
+                }
+            }
+
+            override fun onFailure(call: Call<Void>, t: Throwable) {
+                Log.e("Favorite", "Failed to remove favorite: ${t.message}")
+            }
+        })
+    }
+}
+
+fun fetchFavoriteRecipes(context: Context, onResult: (List<Int>?, String?) -> Unit) {
+    val apiService = ApiConnections.RetrofitClient.getInstance(context)
+    val authToken = runBlocking { UserPreferences.getUserTokenSync(context) }
+    val call = apiService.getFavorites("Bearer $authToken")
+    call.enqueue(object : Callback<List<Int>> {
+        override fun onResponse(call: Call<List<Int>>, response: Response<List<Int>>) {
+            if (response.isSuccessful) {
+                onResult(response.body(), null)
+            } else {
+                onResult(null, response.message())
+            }
+        }
+
+        override fun onFailure(call: Call<List<Int>>, t: Throwable) {
             onResult(null, t.message)
         }
     })

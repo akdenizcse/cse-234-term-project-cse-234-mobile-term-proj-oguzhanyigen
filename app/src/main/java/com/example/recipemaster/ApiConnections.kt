@@ -11,9 +11,12 @@ import retrofit2.Call
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.Path
+import retrofit2.http.Query
 
 
 // Define data class for Recipe
@@ -49,11 +52,29 @@ class ApiConnections {
         @GET("recipes")
         fun getRecipes(): Call<List<HomeRecipe>>
 
+        @GET("recipes/{id}")
+        fun getRecipeById(@Path("id") id: Int): Call<HomeRecipe>
+
         @POST("recipes")
         fun createRecipe(
             @Header("Authorization") authToken: String,
             @Body request: CreateRecipeRequest
         ): Call<CreateRecipeResponse>
+
+        @POST("favorites")
+        fun addFavorite(
+            @Header("Authorization") authToken: String,
+            @Query("recipe_id") recipeId: Int
+        ): Call<Void>
+
+        @DELETE("favorites/{id}")
+        fun removeFavorite(
+            @Header("Authorization") authToken: String,
+            @Path("id") recipeId: Int
+        ): Call<Void>
+
+        @GET("favorites")
+        fun getFavorites(@Header("Authorization") authToken: String): Call<List<Int>>
 
         @GET("user/{userId}")
         fun getUser(@Header("Authorization") authToken: String, @retrofit2.http.Path("userId") userId: Int): Call<User>

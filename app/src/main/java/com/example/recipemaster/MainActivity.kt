@@ -63,7 +63,7 @@ fun RecipeMasterApp() {
                     onLoginClick = { navController.navigate("login") }
                 )
             }
-            composable("home") { HomePage() }
+            composable("home") { HomePage(navController) }
             composable("favorites") { FavoritesPage() }
             composable("create") {
                 CreatePage(
@@ -80,6 +80,10 @@ fun RecipeMasterApp() {
             composable("search") { SearchPage() }
             composable("profile") {
                 ProfilePage()
+            }
+            composable("recipeDetail/{recipeId}") { backStackEntry ->
+                val recipeId = backStackEntry.arguments?.getString("recipeId")?.toInt() ?: 0
+                RecipeDetailPage(recipeId)
             }
         }
     }
