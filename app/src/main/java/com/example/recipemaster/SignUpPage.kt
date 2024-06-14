@@ -144,7 +144,8 @@ fun SignUpPage(onSignUpClick: () -> Unit, onLoginClick: () -> Unit) {
                     containerColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
-                    focusedTextColor = Color.Black
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black
 
                 )
             )
@@ -167,7 +168,8 @@ fun SignUpPage(onSignUpClick: () -> Unit, onLoginClick: () -> Unit) {
                     containerColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
-                    focusedTextColor = Color.Black
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black
 
                 )
             )
@@ -191,7 +193,8 @@ fun SignUpPage(onSignUpClick: () -> Unit, onLoginClick: () -> Unit) {
                     containerColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
-                    focusedTextColor = Color.Black
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black
 
                 )
             )

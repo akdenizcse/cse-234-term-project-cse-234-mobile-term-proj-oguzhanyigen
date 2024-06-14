@@ -17,7 +17,12 @@ import retrofit2.http.POST
 
 
 // Define data class for Recipe
-data class HomeRecipe(val id: Int, val name: String, val time: String, val rating: Float)
+data class HomeRecipe(
+    val id: Int,
+    val title: String,
+    val ingredients: String,
+    val instructions: String
+)
 
 data class CreateRecipeRequest(
     val title: String,
@@ -29,6 +34,8 @@ data class CreateRecipeResponse(
     val success: Boolean,
     val message: String?
 )
+// User data class
+data class User(val id: Int, val name: String, val email: String)
 
 class ApiConnections {
 
@@ -47,6 +54,9 @@ class ApiConnections {
             @Header("Authorization") authToken: String,
             @Body request: CreateRecipeRequest
         ): Call<CreateRecipeResponse>
+
+        @GET("user/{userId}")
+        fun getUser(@Header("Authorization") authToken: String, @retrofit2.http.Path("userId") userId: Int): Call<User>
     }
 
     class AuthInterceptor(private val context: Context) : Interceptor {

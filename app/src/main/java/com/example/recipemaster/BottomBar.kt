@@ -34,7 +34,6 @@ fun BottomBar(navController: NavController) {
         BottomNavItem("home", Icons.Default.Home, "Home"),
         BottomNavItem("favorites", Icons.Default.Favorite, "Favorites"),
         BottomNavItem("create", Icons.Default.AddCircle, "Create"),
-        BottomNavItem("search", Icons.Default.Search, "Search"),
         BottomNavItem("profile", Icons.Default.Person, "Profile")
     )
 
@@ -57,26 +56,18 @@ fun BottomBar(navController: NavController) {
             items.forEach { item ->
                 NavigationBarItem(
                     icon = {
-                        Icon(imageVector = item.icon, contentDescription = item.label,
-                        modifier =
-                        if (item.label == "Create") {
-                        Modifier.size(55.dp).absoluteOffset(y = (-10).dp)
-                        }else {
+                        Icon(
+                            imageVector = item.icon, contentDescription = item.label,
+                            modifier =
                             Modifier.size(24.dp)
-                        })
+                        )
                     },
-                    label = {
-                        if (item.label == "Create") {
-                            Text("")
-                        }else {
-                            Text(item.label)
-                        }
-                         },
+                    label = { Text(item.label) },
 
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = Color(0xFF4CAF50),
                         selectedTextColor = Color(0xFF4CAF50),
-                        unselectedIconColor = if (item.label == "Create") Color(0xFF4CAF50) else Color.Gray,
+                        unselectedIconColor = Color.Gray,
                         unselectedTextColor = Color.Gray,
                         indicatorColor = Color.White
 

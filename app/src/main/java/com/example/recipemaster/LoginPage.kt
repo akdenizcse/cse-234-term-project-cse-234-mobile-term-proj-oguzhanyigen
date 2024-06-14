@@ -143,7 +143,8 @@ fun LoginPage(onLoginClick: (String?) -> Unit, onSignUpClick: () -> Unit) {
                     containerColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
-                    focusedTextColor = Color.Black
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black
 
                 )
             )
@@ -167,7 +168,8 @@ fun LoginPage(onLoginClick: (String?) -> Unit, onSignUpClick: () -> Unit) {
                     containerColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
-                    focusedTextColor = Color.Black
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black
 
                 )
             )

@@ -16,10 +16,10 @@ package com.example.recipemaster
 //    val recipes: StateFlow<List<HomeRecipe>> get() = _recipes
 //
 //    init {
-//        fetchRecipes()
+//        com.example.recipemaster.fetchRecipes()
 //    }
 //
-//    private fun fetchRecipes() {
+//    private fun com.example.recipemaster.fetchRecipes() {
 //        viewModelScope.launch {
 //            try {
 //                val recipeList = ApiConnections.RetrofitClient.instance.getRecipes().await()

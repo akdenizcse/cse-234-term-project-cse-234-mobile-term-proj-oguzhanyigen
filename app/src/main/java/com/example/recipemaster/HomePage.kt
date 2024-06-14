@@ -1,65 +1,77 @@
 package com.example.recipemaster
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import retrofit2.Call
-import retrofit2.http.GET
+import retrofit2.Callback
+import retrofit2.Response
 
-
-
-
-// Composable for HomePage
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomePage(/*homeViewModel: HomeViewModel = viewModel()*/) {
-    //val myrecipes by homeViewModel.recipes.collectAsState()
+fun HomePage() {
+    var recipes by remember { mutableStateOf<List<HomeRecipe>?>(null) }
+    var loading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    var userName by remember { mutableStateOf<String?>(null) }
+    val userId = runBlocking { UserPreferences.getUserId(context).first() } ?: 0
+
+
+
+    LaunchedEffect(Unit) {
+        fetchRecipes(context) { result, error ->
+            loading = false
+            if (result != null) {
+                recipes = result
+            } else {
+                errorMessage = error
+            }
+        }
+
+        fetchUser(context, userId) { user, error ->
+            if (user != null) {
+                userName = user.name
+            } else {
+                errorMessage = error
+            }
+        }
+    }
+
+    val filteredRecipes = recipes?.filter { it.title.contains(searchQuery, ignoreCase = true) }
+
+
 
     Column(
         modifier = Modifier
@@ -67,7 +79,6 @@ fun HomePage(/*homeViewModel: HomeViewModel = viewModel()*/) {
             .background(Color(0xFFF8F8F8))
             .padding(16.dp)
     ) {
-        // Top greeting row
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -75,7 +86,7 @@ fun HomePage(/*homeViewModel: HomeViewModel = viewModel()*/) {
         ) {
             Column {
                 Text(
-                    text = "Hello John",
+                    text = "Hello ${userName ?: "User"}",
                     style = TextStyle(
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
@@ -109,85 +120,58 @@ fun HomePage(/*homeViewModel: HomeViewModel = viewModel()*/) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Filter buttons row
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            items(
-                listOf(
-                    "All",
-                    "Indian",
-                    "Italian",
-                    "Asian",
-                    "Chinese",
-                    "Mexican",
-                    "French"
-                )
-            ) { filter ->
-                FilterButton(filter)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "All Recipes",
-            style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+        TextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            label = { Text("Search Recipes") },
+            placeholder = { Text("Enter recipe title") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .border(width = 1.dp, color = Color.Gray, shape = RoundedCornerShape(8.dp)),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions.Default.copy(
+                keyboardType = KeyboardType.Text
+            ),
+            colors = TextFieldDefaults.textFieldColors(
+                containerColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black
+            )
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Display recipes dynamically from backend
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 10.dp)
-        ) {
-//            itemsIndexed(myrecipes.chunked(2)) { index, pair ->
-//                Row(
-//                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-//                    modifier = Modifier.fillMaxWidth()
-//                ) {
-//                    pair.forEach { recipe ->
-//                        HomeRecipeCard(
-//                            recipe = recipe,
-//                            onCardClick = {
-//                                Log.d("RecipeCard", "Clicked on ${recipe.name}")
-//                            },
-//                            onFavoriteClick = { id, isFavorite ->
-//                                if (isFavorite) {
-//                                    favoriteRecipes.add(id)
-//                                } else {
-//                                    favoriteRecipes.remove(id)
-//                                }
-//                                Log.d("FavoriteIcon", "Favorite clicked on recipe ID $id, isFavorite: $isFavorite, favoriteRecipes: $favoriteRecipes")
-//                            }
-//                        )
-//                    }
-//                }
-//            }
+        if (loading) {
+            CircularProgressIndicator()
+        } else if (errorMessage != null) {
+            Text(
+                text = errorMessage ?: "Unknown error",
+                style = TextStyle(fontSize = 16.sp, color = Color.Red)
+            )
+        } else {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 10.dp)
+            ) {
+                filteredRecipes?.let {
+                    items(it) { recipe ->
+                        HomeRecipeCard(
+                            recipe = recipe,
+                            onCardClick = { /* Handle card click */ },
+                            onFavoriteClick = { id, isFavorite -> /* Handle favorite click */ }
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
-// Composable for filter buttons
-@Composable
-fun FilterButton(text: String) {
-    Button(
-        onClick = { /* Handle filter click */ },
-        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-        shape = RoundedCornerShape(20.dp),
-        modifier = Modifier
-            .background(Color.White, shape = RoundedCornerShape(20.dp))
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-    ) {
-        Text(text = text, color = Color.Black)
-    }
-}
-
-// Composable for recipe card
 @Composable
 fun HomeRecipeCard(
     recipe: HomeRecipe,
@@ -198,7 +182,7 @@ fun HomeRecipeCard(
 
     Card(
         modifier = Modifier
-            .size(160.dp)
+            .fillMaxWidth()
             .padding(8.dp)
             .clickable { onCardClick() },
         shape = RoundedCornerShape(15.dp),
@@ -213,16 +197,15 @@ fun HomeRecipeCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(80.dp)
+                    .height(160.dp)
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.food1),
+                    painter = painterResource(id = R.drawable.food1), // Replace with your actual image source
                     contentDescription = null,
                     modifier = Modifier
-                        .size(80.dp)
-                        .align(Alignment.Center)
-                        .clip(CircleShape)
-                        .background(Color.LightGray)
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(15.dp)),
+                    contentScale = ContentScale.Crop
                 )
 
                 IconButton(
@@ -232,7 +215,7 @@ fun HomeRecipeCard(
                     },
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .offset(x = (16).dp, y = (-8).dp)
+                        .padding(8.dp)
                 ) {
                     Icon(
                         imageVector = if (isFavorite) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder,
@@ -242,42 +225,85 @@ fun HomeRecipeCard(
                     )
                 }
             }
+
             Spacer(modifier = Modifier.height(8.dp))
+
             Text(
-                text = recipe.name,
+                text = recipe.title,
                 style = TextStyle(
-                    fontSize = 14.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 ),
                 textAlign = TextAlign.Center
             )
+
             Spacer(modifier = Modifier.height(4.dp))
+
             Text(
-                text = "Time: ${recipe.time}",
-                style = TextStyle(fontSize = 12.sp, color = Color.Gray),
+                text = "Ingredients: ${recipe.ingredients}",
+                style = TextStyle(fontSize = 14.sp, color = Color.Gray),
                 textAlign = TextAlign.Center
             )
+
             Spacer(modifier = Modifier.height(4.dp))
+
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = recipe.rating.toString(),
-                    style = TextStyle(fontSize = 12.sp, color = Color.Gray),
+                    text = recipe.instructions, //recipe.rating.toString()
+                    style = TextStyle(fontSize = 14.sp, color = Color.Gray),
                     textAlign = TextAlign.Center
                 )
                 Icon(
                     imageVector = Icons.Filled.Star,
                     contentDescription = null,
                     tint = Color.Yellow,
-                    modifier = Modifier.size(12.dp)
+                    modifier = Modifier.size(16.dp)
                 )
             }
         }
     }
 }
 
-// List to hold favorite recipes
-val favoriteRecipes = mutableListOf<Int>()
+fun fetchRecipes(context: Context, onResult: (List<HomeRecipe>?, String?) -> Unit) {
+    val apiService = ApiConnections.RetrofitClient.getInstance(context)
+    val call = apiService.getRecipes()
+    call.enqueue(object : Callback<List<HomeRecipe>> {
+        override fun onResponse(
+            call: Call<List<HomeRecipe>>,
+            response: Response<List<HomeRecipe>>
+        ) {
+            if (response.isSuccessful) {
+                onResult(response.body(), null)
+            } else {
+                onResult(null, response.message())
+            }
+        }
+
+        override fun onFailure(call: Call<List<HomeRecipe>>, t: Throwable) {
+            onResult(null, t.message)
+        }
+    })
+}
+
+fun fetchUser(context: Context, userId: Int, onResult: (User?, String?) -> Unit) {
+    val apiService = ApiConnections.RetrofitClient.getInstance(context)
+    val authToken = runBlocking { UserPreferences.getUserTokenSync(context) }
+    val call = apiService.getUser("Bearer $authToken", userId)
+    call.enqueue(object : Callback<User> {
+        override fun onResponse(call: Call<User>, response: Response<User>) {
+            if (response.isSuccessful) {
+                onResult(response.body(), null)
+            } else {
+                onResult(null, response.message())
+            }
+        }
+
+        override fun onFailure(call: Call<User>, t: Throwable) {
+            onResult(null, t.message)
+        }
+    })
+}
